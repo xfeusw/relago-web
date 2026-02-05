@@ -1,56 +1,64 @@
-{pkgs, ...}: let
-  manifest = pkgs.lib.importJSON ./package.json;
+flake:
+{ config, lib, pkgs, ... }:
+let
+  cfg = config.services.relago-website;
 
-  source = ./.;
+  defaultPkg = flake.packages.${pkgs.stdenv.hostPlatform.system}.default;
 
-  pnpmDeps = pkgs.fetchPnpmDeps {
-    pname = manifest.name;
-    version = manifest.version;
-    src = source;
-    fetcherVersion = 2;
-    hash = "sha256-XTnuQqdriHhYqhe+dVkz4vYBjdVE4D4v3Zb2rXTE0vI=";
-  };
+  site = cfg.package;
 in
-  pkgs.stdenv.mkDerivation {
-    pname = manifest.name;
-    version = manifest.version;
+{
+  options.services.relago-website = with lib; {
+    enable = mkEnableOption "Relago website (static SPA served by nginx)";
 
-    src = source;
-
-    nativeBuildInputs = with pkgs; [
-      nodejs_20
-      pnpm_10
-      pnpmConfigHook
-      typescript
-    ];
-
-    inherit pnpmDeps;
-
-    buildInputs = with pkgs; [
-      vips
-    ];
-
-    buildPhase = ''
-      runHook preBuild
-      pnpm build
-      runHook postBuild
-    '';
-
-    installPhase = ''
-      runHook preInstall
-
-      mkdir -p $out
-      cp -R dist/* $out/
-
-      runHook postInstall
-    '';
-
-    meta = with pkgs.lib; {
-      # homepage = "https://relago.uz";
-      # mainProgram = "${manifest.name}-start";
-      # description = "Website of Xinux";
-      license = with licenses; [cc-by-40];
-      platforms = with platforms; linux ++ darwin;
-      maintainers = with maintainers; [xfeusw];
+    domain = mkOption {
+      type = types.str;
+      example = "relago.uz";
+      description = "Primary domain name.";
     };
-  }
+
+    aliases = mkOption {
+      type = with types; listOf str;
+      default = [ ];
+      example = [ "www.relago.uz" ];
+      description = "Additional server names.";
+    };
+
+    package = mkOption {
+      type = types.package;
+      default = defaultPkg;
+      description = "Static site package to serve as nginx root ($out contains index.html).";
+    };
+  };
+
+  config = lib.mkIf cfg.enable {
+    services.nginx.enable = true;
+    services.nginx.recommendedGzipSettings = true;
+    services.nginx.recommendedOptimisation = true;
+
+    services.nginx.virtualHosts."${cfg.domain}" = {
+      serverAliases = cfg.aliases;
+      root = site;
+
+      locations."/" = {
+        extraConfig = ''
+          try_files $uri $uri/ /index.html;
+        '';
+      };
+
+      locations."~* \\.(?:css|js|mjs|map|png|jpg|jpeg|gif|svg|ico|webp|avif|woff2?)$" = {
+        extraConfig = ''
+          expires 30d;
+          add_header Cache-Control "public, max-age=2592000, immutable" always;
+        '';
+      };
+
+      extraConfig = ''
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-Frame-Options "DENY" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header Permissions-Policy "geolocation=(), microphone=(), camera=()" always;
+      '';
+    };
+  };
+}
