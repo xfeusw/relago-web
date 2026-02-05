@@ -1,6 +1,8 @@
 {pkgs}:
 pkgs.mkShell {
   buildInputs = with pkgs; [
+    nixd
+
     nodejs_20
     pnpm_10
     eslint
