@@ -26,9 +26,9 @@
       ];
 
       perSystem = {pkgs, ...}: {
-        devShells.default = import ./nix/shell.nix {inherit pkgs;};
+        devShells.default = import ./shell.nix {inherit pkgs;};
 
-        formatter = pkgs.nixfmt-rfc-style;
+        formatter = pkgs.nixfmt-tree;
       };
     });
 }
