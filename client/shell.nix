@@ -1,8 +1,8 @@
-{pkgs, nodejs, pnpm}:
+{pkgs}:
 pkgs.mkShell {
   buildInputs = with pkgs; [
-    nodejs
-    pnpm
+    nodejs_20
+    pnpm_10
     eslint
 
     nodePackages.typescript

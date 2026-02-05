@@ -1,9 +1,15 @@
 {pkgs, ...}: let
-  # Manifest data
   manifest = pkgs.lib.importJSON ./package.json;
 
-  # All source codes
   source = ./.;
+
+  pnpmDeps = pkgs.fetchPnpmDeps {
+    pname = manifest.name;
+    version = manifest.version;
+    src = source;
+    fetcherVersion = 2;
+    hash = "sha256-XTnuQqdriHhYqhe+dVkz4vYBjdVE4D4v3Zb2rXTE0vI=";
+  };
 in
   pkgs.stdenv.mkDerivation {
     pname = manifest.name;
@@ -13,37 +19,35 @@ in
 
     nativeBuildInputs = with pkgs; [
       nodejs_20
-      pnpm.configHook
+      pnpm_10
+      pnpmConfigHook
       typescript
     ];
+
+    inherit pnpmDeps;
 
     buildInputs = with pkgs; [
       vips
     ];
 
     buildPhase = ''
-      # Build the package
+      runHook preBuild
       pnpm build
+      runHook postBuild
     '';
 
     installPhase = ''
-      # Create output directory
-      # mkdir -p $out
+      runHook preInstall
 
-      # Move all contents
-      cp -r ./out $out
+      mkdir -p $out
+      cp -R dist/* $out/
+
+      runHook postInstall
     '';
-
-    pnpmDeps = pkgs.pnpm.fetchDeps {
-      pname = manifest.name;
-      version = manifest.version;
-      src = source;
-      hash = "sha256-qfeRcQcpS02+bTlSoj2IBj2YD06y7L8P1M6l+QMj8OQ=";
-    };
 
     meta = with pkgs.lib; {
       # homepage = "https://relago.uz";
-      mainProgram = "${manifest.name}-start";
+      # mainProgram = "${manifest.name}-start";
       # description = "Website of Xinux";
       license = with licenses; [cc-by-40];
       platforms = with platforms; linux ++ darwin;

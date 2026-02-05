@@ -20,22 +20,18 @@
         "aarch64-darwin"
       ];
 
-      # flake = {
-
-      # }
+      flake.nixosModules = {
+        server = import ./module.nix self;
+      };
 
       perSystem = {
         pkgs,
         system,
         ...
-      }: let
-        treefmtEval = treefmt-nix.lib.evalModule pkgs (import ./nix/treefmt.nix);
-      in {
-        formatter = treefmtEval.config.build.wrapper;
-
+      }: {
+        formatter = pkgs.nixfmt-tree;
         devShells.default = import ./shell.nix {inherit pkgs;};
-
-        packages.default = pkgs.callPackage ./nix/package.nix {inherit pkgs;};
+        packages.default = pkgs.callPackage ./default.nix {inherit pkgs;};
       };
     });
 }
