@@ -13,11 +13,6 @@
     ...
   } @ inputs:
     flake-parts.lib.mkFlake {inherit inputs;} ({...}: {
-      flake = {
-        client = import ./client;
-        server = import ./server;
-      };
-
       systems = [
         "x86_64-linux"
         "aarch64-linux"
