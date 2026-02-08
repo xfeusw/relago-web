@@ -26,3 +26,9 @@ in
     enableLibraryProfiling = false;
     enableExecutableProfiling = false;
   })
+  
+# …/uzinfocom/relago-web/server main*​​ ⇡
+# ❄️ impure relago-server-dev-env ❯ nix build .
+# path '/home/xfeusw/workspace/uzinfocom/relago-web/server' does not contain a 'flake.nix', searching up
+# error: flake 'git+file:///home/xfeusw/workspace/uzinfocom/relago-web' does not provide attribute 'packages.x86_64-linux.default' or 'defaultPackage.x86_64-linux'
+
